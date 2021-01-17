@@ -1,0 +1,354 @@
+---
+title: "assignment2_STAT455JohnsonRyan"
+author: "Ryan Johnson"
+date: ''
+output:
+  html_document: default
+  pdf_document: default
+---
+
+This assignment pertains to material in chapter 2 of [Beyond Multiple Linear Regression](https://bookdown.org/roback/bookdown-BeyondMLR/). 
+
+You may find it helpful to reference the code used to write the book. This is available at the book's [github repository](https://github.com/proback/BeyondMLR). The .Rmd file used to write each chapter is provided. I recommend referencing these for help as you write your code.  
+
+
+I have inserted places for you to add text and chunks of R code to this document, but you are free to create new R chunks in other questions where you find it appropriate, even if I did not provide an R chunk for that question. 
+
+When you are done, knit your file and submit it as a .pdf on Moodle. If you have \LaTex installed on your computer, you can knit directly to a .pdf. Otherwise, you should knit to a .html or Word document, and then save as a .pdf. 
+
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning=FALSE, fig.height = 3, fig.width = 7)
+```
+
+```{r}
+library(tidyverse)
+```
+
+## Question 1
+
+This question relates to Open Exercise 2 in Section 2.11.3, titled "The Hot Hand in Basketball," though we will use real data, rather than the hypothetical data from the textbook. We will explore various models for 3-point shooting in basketball, using real data from Golden State Warrior's star Stephen Curry.
+
+
+Shots are listed in the order they were taken, in each of the first 7 games of the 2020-21 season. (B = Basket Made, M = Missed Shot). The total number of made and missed shots are also shown, along with the location of the game, which was either Home (H), or Away (A). 
+
+|Game | Location | Shots | Made | Missed |
+|-----|-------|------|--------|-----|
+| 1 | A | MMBBMMMM | 2 | 6 |   
+| 2 | A | MMMBMMBMMM | 2 | 8 |   
+| 3 | A | MMMBMMMMBMMBBMB | 5 | 10 |   
+| 4 | A |  MBMBBMBB | 5 | 3 |   
+| 5 | H | MBMMMMBMMBBM | 4 | 8 |   
+| 6 | H | BMMMBMBBMMBBMMBB | 8 | 8 |   
+| 7 | H| MMMBBBBMMMMB  | 5 | 7 |   
+
+Consider the following four models.
+
+1. Independent shots - Each of Curry's shots are independent, and the probability of making a basket is the same for each shot. Let $P_B$ represent the probability of a basket.   
+
+2. Location dependent - Curry has a different probability of making a shot when playing at home than away. Let $P_{B|H}$ represent the probability of making a shot when playing at home, and $P_{B|A}$ represent the probability of making a shot when away.   
+
+3. Game dependent - The probability of Curry making a shot is different for each game. Let $P_{B|1}$, $P_{B|2}$, \ldots, $P_{B|7}$ denote the probabilities of Curry making a shot in each of the seven games.     
+
+4. Prior shot dependent - The probability of Curry making a shot depends on whether or not he has made the previous shot. Let $P_{B|Prior B}$ represent the probability of making a basket when the prior shot in the game was a basket. Let $P_{B|Prior M}$ represent the probability of making a basket when the prior shot in the game was a miss. Let $P_{B|First}$ represent the probability of making the first shot of a game. 
+
+#### a) For each of the four models, write the likelihood functions using the observed data. 
+Try to type your answers in the RMarkdown document, using \LaTex syntax. (See the examples below). If you are unable to do this, you may write out the likelihood functions on a separate sheet and attach them. 
+
+\LaTex Code Examples:
+
+\[
+Lik(p_B) = P(G)P(B)P(B) = (1-p_B)p_B^2
+\]
+
+\[
+Lik(P_{B|N},P_{B|B Bias},P_{B|G Bias}) = (P_{B|N})^{17} (1-P_{B|N})^{15}(P_{B|B Bias})^{15} (1-P_{B|B Bias})^{4}(P_{B|G Bias})^{8} (1-P_{B|G Bias}) 
+\]
+
+
+##### i) Model 1
+
+#### Lik(p_b) = (p_b)^31(1-p_b)^50
+
+##### ii) Model 2
+
+####Lik(p_H,p_A) = (p_H)^17(1-p_H)^23(p_A)^14(1-p_A)^27
+
+##### iii) Model 3
+
+###Lik(p_B|1,p_B|2,p_B|3,p_B|4,p_B|5,p_B|6,p_B|7)=(p_B|1)^2(1-p_B|1)^6(p_B|2)^2(1-p_B|2)^8(p_B|3)^5(1-p_B|3)^10(p_B|4)^5(1-p_B|4)^3(p_B|5)^4(1-p_M|5)^8(p_B|6)^8(1-p_M|6)^8(p_B|7)^5(1-p_M|7)^7
+
+##### iv) Model 4    
+
+Note that when the prior shot was a made basket, Curry made 11 shots and missed 13. When the prior shot was a miss, he made 19 and missed 31. On the first shot of the game, he made 1 and missed 6.  
+
+Lik(p_b|prior, p_m|prior, p_b|First) = (p_b|prior)^11(1-p_b|prior)^13(p_m|prior)^19(1-p_m|prior)^31(p_b|first)^1(1-p_b|first)^6
+
+#### b) Plot the likelihood function for Model 1. 
+
+```{r}
+p_b=seq(0,1,length=161)
+lik1=p_b^31 * (1-p_b)^50      # likelihood of getting observed data
+df <- data.frame(p_b,lik1)
+plot<- ggplot(data=df,aes(x=p_b, y=lik1)) + 
+  geom_line(color="blue", size=2) + 
+  xlab("possible values of P_B") + ylab("Likelihood") + 
+  labs(title="Likelihood function for Curry's shots") 
+plot + xlim(c(0.2, 0.6))
+```
+
+#### c) Order the following from most likely to least likely, given the observed data.
+    A) Stephen Curry is a 25% 3-point shooter.  
+    B) Stephen Curry is a 30% 3-point shooter.   
+    C) Stephen Curry is a 40% 3-point shooter.    
+    D) Stephen Curry is a 50% 3-point shooter. 
+    
+C,B,D,A. The difference between A and D is pretty much the same.
+#### d) Modify the function `Lik.f` in Section 2.4.2.2 of the text and use it to approximate the maximum likelihood estimate for $P_B$ in Model 1. Be sure to use a large enough value of `nGrid` to get an precise approximation.
+
+```{r}
+Lik.f <- function(B,M,nGrid){
+    # possible values for prob a boy is born
+    pb <- seq(0, 1, length = nGrid)   
+    lik <- pb^{B} * (1 - pb)^{M}
+    # maximum likelihood over nGrid values of pb
+    max(lik)             
+    # value of pb where likelihood maximized
+    pb[lik==max(lik)]    
+  }
+# estimated maximum likelihood estimator for p_B
+Lik.f(B = 31, M = 50, nGrid = 101) 
+```
+
+
+The maximum likelihood estimate for pb is 0.38%. Therefore Steph Curry is a 38% shooter.
+
+#### e) The textbook shows that when the response variable is binary, the maximum likelihood estimate for number of successes is given by #successes/(#successes + #failures). (Check that this is consistent with your answer from (d).) It is also true that estimates for probabilities under certain conditions (for example the $P_{B|H}$) can be calculated using the same formula applied to cases where the condition is met. (For example, see the calculations under Table 2.9 in the text.) Calculate the maximum likelihood estimates for the parameters in each model. 
+
+##### Model 1:
+
+MLE(p_b) = 0.38
+
+##### Model 2:
+
+MLE(p_H) = 0.43
+MLE(p_A) = 0.34
+
+##### Model 3:
+
+MLE(p_B|1) = 0.25
+MLE(p_B|2) = 0.20
+MLE(p_B|3) = 0.33
+MLE(p_B|4) = 0.63
+MLE(p_B|5) = 0.38
+MLE(p_B|6) = 0.50
+MLE(p_B|7) = 0.42
+
+##### Model 4:
+
+MLE(p_b|prior) = 0.46
+MLE(p_m|prior) = 0.38
+MLE(p_b|First) = 0.14
+
+
+#### f) Calculate the value of the log of the likelihood function for each model. 
+
+##### Model 1
+
+```{r}
+#Lik(p_b)=(p_b)^31(1-p_b)^50
+#log(Lik(p_b)) = 31*log(p_b)+50*log(1-p_b)
+#log(MLE(p_b)) = log(.38)
+#print(log(.38))
+
+logmodel1<- 31*log(.38)+50*log(1-.38)
+print(logmodel1)
+
+```
+
+##### Model 2
+
+```{r}
+#Lik(p_H,p_A) = (p_H)^17(1-p_H)^23(p_A)^14(1-p_A)^27
+#log(Lik(p_H,p_A)) = 17*log(p_H)+23*log(1-p_H)+14*log(p_A)+27*(1-p_A)
+#log(MLE(p_H)) = log(0.43)
+#log(MLE(p_A)) = log(0.34)
+#print(log(0.43))
+#print(log(0.34))
+
+logmodel2 <- 17*log(0.43)+23*log(1-0.43)+14*log(0.34)+27*(1-0.34)
+print(logmodel2)
+```
+
+```{r}
+
+##### Model 3
+
+
+#Lik(p_B|1,p_B|2,p_B|3,p_B|4,p_B|5,p_B|6,p_B|7)=(p_B|1)^2(1-p_B|1)^6(p_B|2)^2(1-p_B|2)^8(p_B|3)^5(1-p_B|3)^10(p_B|4)^5(1-p_B|4)^3(p_B|5)^4(1-p_M|5)^8(p_B|6)^8(1-p_M|6)^8(p_B|7)^5(1-p_M|7)^7
+
+#log(Lik(p_B|1,p_B|2,p_B|3,p_B|4,p_B|5,p_B|6,p_B|7))=2*log(p_B|1)+6*log(1-p_B|1)+2*log(p_B|2)+8*log(1-p_B|2)+5*log(p_B|3)+10*log(1-p_B|3)+5*log(p_B|4)+3*log(1-p_B|4)+4*log(p_B|5)+8*log(1-p_B|5)+8*log(p_B|6)+8*log(1-p_B|6)+5*log(p_B|7)+7*log(1-p_B|7)
+
+#log(MLE(p_B|1)) = log(0.25)
+#print(log(0.25))
+#log(MLE(p_B|2)) = log(0.20)
+#print(log(0.20))
+#log(MLE(p_B|3)) = log(0.33)
+#print(log(0.33))
+#log(MLE(p_B|4)) = log(0.63)
+#print(log(0.63))
+#log(MLE(p_B|5)) = log(0.38)
+#print(log(0.38))
+#log(MLE(p_B|6)) = log(0.50)
+#print(log(0.50))
+#log(MLE(p_B|7)) = log(0.42)
+#print(log(0.42))
+
+logmodel3 <- 2*log(0.25)+6*log(1-0.25)+2*log(0.20)+8*log(1-0.20)+5*log(0.33)+10*log(1-0.33)+5*log(0.63)+3*log(1-0.63)+4*log(0.38)+8*log(1-0.38)+8*log(0.50)+8*log(1-0.50)+5*log(0.42)+7*log(1-0.42)
+print(logmodel3)
+
+
+```
+
+##### Model 4
+
+```{r}
+#Lik(p_b|prior, p_m|prior, p_b|First) = (p_b|prior)^11(1-p_b|prior)^13(p_m|prior)^19(1-p_m|prior)^31(p_b|first)^1(1-p_b|first)^6
+#log(Lik(p_b|prior,p_m|prior,p_b|First)) = 11*log(p_b|prior)+36*log(1-p_b|prior)+19*log(p_m|prior)+31*log(1-p_m|prior)+1*log(p_b|first)+6*log(1-p_b|first)
+
+#log(MLE(p_b|prior)) = log(0.46)
+#print(log(0.46))
+#log(MLE(p_m|prior)) = log(0.38)
+#print(log(0.38))
+#log(MLE(p_b|First))= log(0.14)
+#print(log(0.14))
+
+logmodel4 <- 11*log(0.46)+36*log(1-0.46)+19*log(0.38)+31*log(1-0.38)+1*log(0.14)+6*log(1-0.14)
+print(logmodel4)
+```
+
+
+#### g) Calculate the AIC and BIC for each model. 
+
+##### Model 1
+
+```{r}
+
+AIC1 <- -2*(-53.89689)+2*(1)
+print(AIC1)
+BIC1 <- -2*(-53.89689)+1*log(81)
+print(BIC1)
+```
+
+##### Model 2
+
+```{r}
+AIC2 <- -2*(-24.55956)+2*(2)
+print(AIC2)
+BIC2 <- -2*(-24.55956)+2*log(81)
+print(BIC2)
+```
+
+##### Model 3
+
+```{r}
+AIC3 <- -2*(-51.2793)+2*(7)
+print(AIC3)
+BIC3 <- -2*(-51.2793)+7*log(81)
+print(BIC3)
+```
+
+##### Model 4
+
+```{r}
+AIC4 <- -2*(-66.79877)+2*(6)
+print(AIC4)
+BIC4 <- -2*(-66.79877)+6*log(104)
+print(BIC4)
+```
+
+
+#### h) For each set of models below, perform a likelihood ratio test to compare the models, or explain why it is inappropriate to do so. In each case you should state the null and alternative hypotheses, calculate the likelihood ratio test statistic, state its distribution under the null hypothesis, calculate the p-value (hint: use pchisq), and state your conclusion in context. 
+
+#### If it is inappropriate to use a LRT, you may delete the code for that part, and replace it with an explanation of why it is inappropriate. 
+
+
+##### Model 1 vs Model 2
+
+Null Hypothesis:  The probability that Stephen Curry makes a basket does not depend on the location the game was played at. 
+
+Alternative Hypothesis: The probability that Stephen Curry makes a basket does depend on the location the game was played at. 
+
+```{r}
+LRT2 <- 2*(-24.55956 - -53.89689)
+print(LRT2)
+```
+
+State the Distribution of the Test Statistic under the null hypothesis.
+
+```{r}
+1- pchisq(58.67466, 1)
+```
+
+Conclusion in context: There is strong evidence against the null hypothesis which states that the probability that stephen curry makes a basket does not depend on the location the game was played in. 
+
+##### Model 1 vs Model 3     
+
+Null Hypothesis: The probability that Stephen Curry makes a basket does not depend on the game in which the shot occurs. 
+
+Alternative Hypothesis: The probability that Stephen Curry makes a basket does depend on the game in which the shot occurs. 
+
+```{r}
+LRT3 <- 2*(-51.2793 - -53.89689)
+print(LRT3)
+```
+
+State the Distribution of the Test Statistic under the null hypothesis.
+
+```{r}
+1- pchisq(5.23518, 6)
+```
+
+Conclusion in context: There is not strong evidence that would lead to the rejection of the null hypothesis that there is no dependence of a shot being made based on the game the shot occurred. 
+
+##### Model 1 vs Model 4
+
+Null Hypothesis: The probability that Stephens Curry makes a basket does not depend on whether he had made a shot prior. 
+
+Alternative Hypothesis: The probability that Stephen curry makes a basket does depend on whether he had made a shot prior. 
+
+```{r}
+LRT4 <- 2*(-66.79877 - -53.89689)
+print(LRT4)
+```
+
+State the Distribution of the Test Statistic under the null hypothesis.
+
+```{r}
+1- pchisq(-25.80376, 5)
+```
+
+Conclusion in context:There isn't strong evidence that would lead to the rejection of the null hypothesis which states that the probability of Stephen Curry making a shot is not dependent on the outcome of a prior shot. With a p-value of 1, the difference between the models is likley due to chance.
+
+##### Model 2 vs Model 4
+
+Null Hypothesis: The probability that Stephen Curry does make a basket is equally dependent on his game location as it is based on his prior shots. 
+
+Alternative Hypothesis: The probability that Stephen Curry doesn't make a basket is not equally dependent on his game location as it is based on his prior shots. 
+
+```{r}
+LRT2_4 <- 2*(-66.79877 - -24.55956)
+print(LRT2_4)
+```
+
+State the Distribution of the Test Statistic under the null hypothesis.
+
+```{r}
+1 - pchisq(-84.47842, 1)
+```
+
+Conclusion in context: There is not strong evidence that would lead to the rejection of the null hypothesis which states that there is an equal probability of Stephen Curry regardless of game location or prior shots. With a p-value of 1, the difference between the models is likely due to chance.
+
+#### i) Write a paragraph summarizing your findings, using information from the previous parts. Which model best describes Stephen Curry's three-point shooting? Does there appear to be evidence that Curry's probability of making shots is different when playing at home than away? Does his probability appear to vary between games? Is there evidence that his probability of making a shot is dependent on his previous shot?
+
+Through our investigation of Stephen Curry's shot percentages, we were able to find out interesting factors which may affect his shot's probability. We made 4 models in total, the first model essentially stated that Stephen Curry's probability of sinking a basket was a coin toss, 50-50. The second model investigated whether the probability of him making a shot was dependent on the location of the game. The third model investigated the probability of him making a shot based on which game he took that shot. And lastly, we made a fourth model which stated that the probability of him making a basket was dependent on prior shots. After determining which the maximum likelihood estimates and maximum log of the likelihood function, we ran the models through AIC and BIC for comparison. Based on those results we found that model 2 had the lowest AIC and BIC which leads us to believe it was able to follow the data more closely. We then directly compared the models in a Likelihood ratio test and compared it with the chi-squared distribution. We found that model 2 was the had the largest difference from the control model (model 1), it was also supported with the p-value of 1.865175e-14. No other model was able to get a significant difference between model 1 or 2. Based on our results I would that Stephen Curry's three point shooting percentage is dependent on whether he is playing a home game or an away game. There does not appear to be evidence that Curry's shots were different between games, this is shown when comparing model 3 and 1 in LRT which had an insignificant p-value of 0.5140227 as the difference from between models. . There is also no evidence that his probability of making a shot is dependent on his previous shot, which was evidence through comparing model 1 and model 4 which had a p-value of 1 as the difference from between models. 
